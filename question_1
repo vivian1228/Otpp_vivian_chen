@@ -1,5 +1,7 @@
 #the following code is used to generate a time series based on 2 i.i.d. time series which are distributied
 #as N(0,1)
+#user formula Y = rho * X + np.sqrt(1 - rho**2) * Z
+
 
 import numpy as np
 
