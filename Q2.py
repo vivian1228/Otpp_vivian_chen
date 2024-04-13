@@ -2,23 +2,30 @@ import numpy as np
 import pandas as pd
 import yfinance as yf
 
-# Download data
-data = yf.download(['^GSPC', 'USDCAD=X'], start="2019-12-31", end="2023-12-31")['Adj Close']
+def download_and_standardize(tickers, start_date, end_date):
+    # Download data
+    data = yf.download(tickers, start=start_date, end=end_date)['Adj Close']
+    
+    # Standardize the data
+    standardized_data = (data - data.mean()) / data.std()
+    
+    return standardized_data
 
-# Preprocess by standardizing
-standardized_data = (data - data.mean()) / data.std()
+def create_new_series(data, rho):
+    X = data.iloc[:, 0]  # Assume first column is S&P 500
+    Y = data.iloc[:, 1]  # Assume second column is USD/CAD
+    Z = rho * X + np.sqrt(1 - rho**2) * Y
+    return Z
 
-# Desired correlation matrix and its Cholesky decomposition
-rho = 0.5  # target correlation
-correlation_matrix = np.array([[1, rho], [rho, 1]])
-cholesky_decomp = np.linalg.cholesky(correlation_matrix)
+# Settings
+tickers = ['^GSPC', 'USDCAD=X']
+start_date = "2019-12-31"
+end_date = "2023-12-31"
+rho = 0.5  # Desired correlation
 
-# Apply the Cholesky decomposition to adjust correlation
-transformed_data = np.dot(standardized_data.fillna(0), cholesky_decomp)
+# Execute the function
+data = download_and_standardize(tickers, start_date, end_date)
+new_series_Z = create_new_series(data, rho)
 
-# Convert back to DataFrame and apply original statistics
-final_data = pd.DataFrame(transformed_data, columns=data.columns, index=data.index)
-final_data = final_data * data.std() + data.mean()
-
-# Verify the new correlation
-print(final_data.corr())
+# Output
+print(new_series_Z.head())  # Display first few rows of the new series Z
